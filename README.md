@@ -1,150 +1,355 @@
-# Simple TTS Hotkey
+#  0rator TTS Engine
 
-A lightweight macOS background application that provides system-wide text-to-speech functionality triggered by double-pressing the Command key while text is selected.
+<div align="center">
+<img src="0rator.png" height="128">
 
-## Features
 
-- 🎯 **Simple Hotkey**: Double-press Command key to trigger TTS
-- 🔊 **High-Quality Speech**: Uses Kokoro TTS engine for natural-sounding voices
-- 🖥️ **System-Wide**: Works in any application (browsers, text editors, PDFs, etc.)
-- 🚀 **Lightweight**: Minimal resource usage when idle
-- 🔒 **Privacy-First**: All processing happens locally, no internet required
-- 🛠️ **Robust**: Comprehensive error handling and recovery
 
-## Quick Start
+![Kokoro TTS](https://img.shields.io/badge/Kokoro-TTS-blue?style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-3.11+-green?style=for-the-badge&logo=python)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red?style=for-the-badge&logo=pytorch)
+![PyTorch](https://img.shields.io/badge/Espeak-1.51+-orange?style=for-the-badge)
+![macOS](https://img.shields.io/badge/macOS-Compatible-black?style=for-the-badge&logo=apple)
 
-1. **Install Dependencies**:
+*High-quality neural text-to-speech with 50+ voices across 9 languages*
+
+</div>
+
+## ✨ Features
+
+- 🌍 **8 Languages**: American English, British English, Spanish, French, Hindi, Italian, Portuguese, Japanese, Chinese
+- 🎭 **50+ Voices**: Male and female voices with unique personalities
+- ⚡ **Lightning Fast**: GPU-accelerated inference with streaming audio
+- 🎯 **macOS Hotkey**: Double-tap Option key ⌥ for instant TTS anywhere
+- 🔊 **High Quality**: Super high quality neural audio synthesis
+- 🚀 **Easy Setup**: Installation through UV package manager
+- 📱 **System-Wide**: Works with any macOS application
+
+## 🗣️ Available Voices & Languages
+<details>
+<summary>Voices/Languages Available</summary>
+
+### 🇺🇸 American English (a)
+**Female Voices:**
+- `af_alloy`
+- `af_aoede`
+- `af_bella`
+- `af_heart`
+- `af_jessica`
+- `af_kore`
+- `af_nicole`
+- `af_nova`
+- `af_river`
+- `af_sarah`
+- `af_sky`
+
+**Male Voices:**
+- `am_adam`
+- `am_echo`
+- `am_eric`
+- `am_fenrir`
+- `am_liam`
+- `am_michael`
+- `am_onyx`
+- `am_puck`
+- `am_santa`
+
+### 🇬🇧 British English (b)
+**Female Voices:**
+- `bf_alice`
+- `bf_emma`
+- `bf_isabella`
+- `bf_lily`
+
+**Male Voices:**
+- `bm_daniel`
+- `bm_fable`
+- `bm_george`
+- `bm_lewis`
+
+### 🇪🇸 Spanish (e)
+**Female Voices:**
+- `ef_dora`
+
+**Male Voices:**
+- `em_alex`
+- `em_santa`
+
+### 🇫🇷 French (f)
+**Female Voices:**
+- `ff_siwis`
+
+### 🇮🇳 Hindi (h)
+**Female Voices:**
+- `hf_alpha`
+- `hf_beta`
+
+**Male Voices:**
+- `hm_omega`
+- `hm_psi`
+
+### 🇮🇹 Italian (i)
+**Female Voices:**
+- `if_sara`
+
+**Male Voices:**
+- `im_nicola`
+
+### 🇯🇵 Japanese (j)
+**Female Voices:**
+- `jf_alpha`
+- `jf_gongitsune`
+- `jf_nezumi`
+- `jf_tebukuro`
+
+**Male Voices:**
+- `jm_kumo`
+
+### 🇧🇷 Portuguese (p)
+**Female Voices:**
+- `pf_dora`
+
+**Male Voices:**
+- `pm_alex`
+- `pm_santa`
+
+### 🇨🇳 Chinese (z)
+**Female Voices:**
+- `zf_xiaobei`
+- `zf_xiaoni`
+- `zf_xiaoxiao`
+- `zf_xiaoyi`
+
+**Male Voices:**
+- `zm_yunjian`
+- `zm_yunxi`
+- `zm_yunxia`
+- `zm_yunyang`
+</details>
+
+## 🚀 Quick Start
+
+### Why UV? The Future of Python Package Management
+
+We recommend **UV** for this project because it's:
+- ⚡ **10-100x faster** than pip
+- 🔒 **More secure** with built-in dependency resolution
+- 🎯 **Zero configuration** - works out of the box
+- 🔄 **Drop-in replacement** for pip/pipenv/poetry
+- 🌟 **Industry standard** - used by major Python projects
+
+### Installation
+
+1. **Install UV (if you don't have it):**
+- Assumed that python is already installed on your system.
    ```bash
-   pip install torch numpy pyobjc psutil transformers phonemizer soundfile
+   pip install uv 
    ```
 
-2. **Ensure TTS Model Files** (Optional):
-   - Place `kokoro-v0_19.pth` in the script directory (if available)
-   - Place voice files in `voices/` directory (e.g., `voices/bf_isabella.pt`)
-   - **Note**: The script will work with placeholder audio if model files are not available
-
-3. **Grant Permissions**:
-   - Open System Preferences > Security & Privacy > Privacy
-   - Select "Input Monitoring" and add this application
-   - Restart the application after granting permissions
-
-4. **Run the Application**:
+2. **Clone and setup the project:**
    ```bash
-   python3 simple_tts_hotkey.py
+   # Clone repo
+   cd 0rator
+   
+   # Create virtual environment and install dependencies
+   uv venv --python=3.11
+   source .venv/bin/activate  # On macOS/Linux
+   uv pip install -r requirements.txt
    ```
 
-## Usage
+3. **Install espeak-ng (required for phonemization):**
+   ```bash
+   # macOS
+   brew install espeak-ng
+   
+   # Verify installation
+   espeak-ng --version
+   
+   #eSpeak NG text-to-speech: 1.51  Data at: /opt/homebrew/Cellar/espeak-ng/1.51/share/espeak-ng-data
+   ```
 
-1. **Select text** in any application
-2. **Double-press the Command key** quickly (within 500ms)
-3. **Listen** to the selected text being read aloud
+4. **Download [model](https://huggingface.co/hexgrad/Kokoro-82M) and voices** (if not included):
+   ```bash
+   pip install -U "huggingface_hub[cli]"
 
-## Command Line Options
+   # Download model
+   huggingface-cli download hexgrad/Kokoro-82M --include "kokoro-v1_0.pth" --local-dir .
 
+   # Download voices
+   huggingface-cli download hexgrad/Kokoro-82M --include "voices/*" --local-dir .
+   ```
+
+## 🎯 Usage
+
+### 1. macOS Hotkey Application
+
+**Grant Accessibility Permissions First:**
+1. Open System Preferences → Security & Privacy → Privacy
+2. Select "Accessibility" from the left panel
+3. Click the lock icon and enter your password
+4. Add your terminal application (Terminal.app, iTerm2, etc.)
+5. Ensure it's checked/enabled
+
+**Run the hotkey application:**
 ```bash
-python3 simple_tts_hotkey.py [OPTIONS]
-
-Options:
-  -d, --debug          Enable debug mode with verbose logging
-  -l, --log-file FILE  Log to specified file (with rotation)
-  -s, --status         Show status report and exit
-  -h, --help          Show help message
-  -v, --version       Show version information
+# Make sure your are inside the virtual environment
+python3 macos_tts_hotkey.py
 ```
 
-## Examples
+**How to use:**
+- Select any text in any macOS application
+- Double-tap the Command key quickly
+- Listen to the text being read aloud!
 
-```bash
-# Run with default settings
-python3 simple_tts_hotkey.py
+## ⚙️ Configuration
 
-# Run with debug logging
-python3 simple_tts_hotkey.py --debug
+### Hotkey Application Config
 
-# Log to file
-python3 simple_tts_hotkey.py --log-file tts.log
-
-# Check status
-python3 simple_tts_hotkey.py --status
+Edit `config_hotkey.json`:
+```json
+{
+    "model_path": "kokoro-v1_0.pth",
+    "voices_dir": "voices",
+    "voice": "af_bella",
+    "speed": 1.0,
+    "device": "auto"
+}
 ```
 
-## Requirements
+### Voice Selection
 
-- **macOS** (tested on macOS 10.15+)
-- **Python 3.8+**
-- **Input Monitoring permission** (for hotkey detection)
-- **Kokoro TTS model files**
-- **Audio output device**
+Choose voices by language prefix:
+- `af_*` / `am_*` - American English
+- `bf_*` / `bm_*` - British English  
+- `ef_*` / `em_*` - Spanish
+- `ff_*` - French
+- `hf_*` / `hm_*` - Hindi
+- `if_*` / `im_*` - Italian
+- `jf_*` / `jm_*` - Japanese
+- `pf_*` / `pm_*` - Portuguese
+- `zf_*` / `zm_*` - Chinese
 
-## Dependencies
+## 🔧 Advanced Usage
 
-- `torch` - PyTorch for TTS model inference
-- `numpy` - Numerical operations
-- `pyobjc` - macOS system integration
-- `psutil` - System resource monitoring
-- `transformers` - BERT model for text processing
-- `phonemizer` - Text to phoneme conversion
-- `soundfile` - Audio file handling
+### Multi-language Support
 
-## Troubleshooting
+```python
+# Create pipelines for different languages
+en_pipeline = KPipeline(lang_code='a', model=model)  # American English
+es_pipeline = KPipeline(lang_code='e', model=model)  # Spanish
+ja_pipeline = KPipeline(lang_code='j', model=model)  # Japanese
 
-### Hotkey Not Working
-- **Check permissions**: Ensure Input Monitoring permission is granted
-- **Restart application**: After granting permissions, restart the script
-- **Test manually**: Try the `--status` flag to check component status
+# Use appropriate pipeline for each language
+english_audio = list(en_pipeline("Hello world!", voice="af_bella"))[0].audio
+spanish_audio = list(es_pipeline("¡Hola mundo!", voice="ef_dora"))[0].audio
+japanese_audio = list(ja_pipeline("こんにちは世界！", voice="jf_alpha"))[0].audio
+```
 
-### No Audio Output
-- **Check system volume**: Ensure system volume is not muted
-- **Check audio device**: Verify default audio output device is working
-- **Test with other apps**: Confirm system audio works with other applications
+## 🛠️ Troubleshooting
 
-### High Memory Usage
-- **Normal behavior**: TTS models require 200-500MB of memory
-- **Automatic optimization**: The application monitors and optimizes memory usage
-- **Manual cleanup**: Memory is cleaned up automatically during idle periods
+### Common Issues
 
-### TTS Engine Errors
-- **Model files optional**: The script works with placeholder audio if model files are missing
-- **Check dependencies**: Ensure all Python packages are installed (`pip install -r requirements.txt`)
-- **File permissions**: If using real model files, verify the application can read them
-- **Disk space**: Ensure sufficient disk space for model loading (if using real models)
+**"Failed to start keyboard monitoring"**
+- Grant Accessibility permissions in System Preferences
+- Restart the application after granting permissions
 
-## Performance
+**"espeak-ng not found"**
+```bash
+# Install espeak-ng
+brew install espeak-ng
 
-- **Memory Usage**: ~200-500MB (primarily TTS model)
-- **CPU Usage**: <1% when idle, 10-30% during speech generation
-- **Startup Time**: 2-5 seconds (model loading)
-- **Response Time**: <500ms from hotkey to speech start
+# Verify installation
+which espeak-ng
+```
 
-## Architecture
+**"Model file not found"**
+- Ensure `kokoro-v1_0.pth` is in the project root
+- Check file permissions and path
 
-The application consists of several key components:
+**"CUDA out of memory"**
+```python
+# Use CPU instead
+config.device = "cpu"
 
-- **KeyboardMonitor**: Global keyboard event detection using CGEventTap
-- **TextCaptureManager**: Text selection capture via clipboard simulation
-- **TTSEngineManager**: Wrapper for Kokoro TTS engine and audio playback
-- **ErrorRecoveryManager**: Comprehensive error handling and retry logic
+# Or reduce batch size for long texts
+```
 
-## Privacy & Security
+**"Voice file not found"**
+- Ensure voice files are in the `voices/` directory
+- Check that the voice name matches exactly (case-sensitive)
 
-- **Local Processing**: All TTS processing happens locally on your machine
-- **No Network**: No internet connection required or used
-- **Minimal Permissions**: Only requires Input Monitoring for hotkey detection
-- **No Data Storage**: Selected text is not stored or logged permanently
+### Performance Optimization
 
-## Contributing
+- **GPU Usage**: Automatic CUDA detection, falls back to CPU
+- **Memory Management**: Automatic cleanup after generation
+- **Streaming**: Use `generate_audio_stream()` for long texts
+- **Caching**: Voice packs are cached after first load
 
-This is a standalone script designed for simplicity. For feature requests or bug reports, please ensure you include:
+## 📁 Project Structure
 
-1. macOS version
-2. Python version
-3. Debug log output (`--debug` flag)
-4. Steps to reproduce the issue
+```
+0rator/
+├── kokoro/               # Core TTS library
+│   ├── __init__.py
+│   ├── model.py          # KModel implementation
+│   ├── pipeline.py       # KPipeline
+│   └── ...
+├── voices/               # Voice pack files (.pt)
+│   ├── af_bella.pt
+│   ├── am_adam.pt
+│   └── ...
+├── macos_tts_hotkey.py   # macOS hotkey application
+├── kokoro-v1_0.pth       # Main TTS model
+├── requirements.txt      # Python dependencies
+└── README.md             # This file
+```
 
-## License
+## 🤝 Contributing
 
-This project is provided as-is for educational and personal use.
+We welcome contributions! Please feel free to:
+- Report bugs and issues
+- Suggest new features
+- Submit pull requests
+- Add new voice packs
+- Improve documentation
 
-## Version History
 
-- **v1.0.0**: Initial release with core TTS hotkey functionality
+## 🗺️ Roadmap
+
+<div align="center">
+
+</div>
+
+- [x] Streaming Audio chunks for Long Formers (Controlled low latency)
+- [x] Speed Controls for Audio Stream
+- [ ] LLM driven Agentic AI Capabilities
+- [ ] Native MacOS application/interface for UI driven audio controlls
+- [ ] UI voice swap controlls
+
+---
+
+### 🤝 Get Involved
+
+Want to help shape the future of Kokoro TTS? Here's how:
+
+- 🐛 **Report Issues** - Help us identify bugs and improvements
+- 💡 **Suggest Features** - Share your ideas for new functionality  
+- 🔧 **Contribute Code** - Submit PRs for features or fixes
+- 🎨 **Design UI/UX** - Help design the native app interface
+- 📝 **Write Documentation** - Improve guides and tutorials
+- 🗣️ **Add Voices** - Contribute new voice packs and languages
+
+## 🙏 Acknowledgments
+
+- Built on the amazing [Kokoro TTS](https://github.com/hexgrad/kokoro) model
+- Powered by PyTorch and modern neural architectures
+- Inspired by the need for accessible, high-quality TTS
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the open-source community**
+
+[![LinkedIn](https://img.shields.io/badge/Reach_Me_Out-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/niranjanakella/)
+</div>

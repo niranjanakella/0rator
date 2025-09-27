@@ -21,18 +21,13 @@ if [ ! -f "macos_tts_hotkey.py" ]; then
 fi
 
 # Check if model files exist
-if [ ! -f "kokoro-v0_19.pth" ]; then
-    echo "⚠️  Warning: kokoro-v0_19.pth not found"
+if [ ! -f "kokoro-v1_0.pth" ]; then
+    echo "⚠️  Warning: kokoro-v1_0.pth not found"
     echo "Please ensure the TTS model file is in the project directory"
 fi
 
-if [ ! -f "voices/bf_isabella.pt" ]; then
-    echo "⚠️  Warning: voices/bf_isabella.pt not found"
-    echo "Please ensure the voice pack file is in the voices/ directory"
-fi
-
 # Check if requirements file exists and offer to install dependencies
-if [ -f "requirements_hotkey.txt" ]; then
+if [ -f "requirements.txt" ]; then
     echo ""
     echo "📦 Checking dependencies..."
     
@@ -42,11 +37,11 @@ if [ -f "requirements_hotkey.txt" ]; then
         read -r response
         if [[ "$response" =~ ^[Yy]$ ]]; then
             echo "Installing dependencies..."
-            pip3 install -r requirements_hotkey.txt
+            pip3 install -r requirements.txt
         fi
     else
         echo "⚠️  pip3 not found. Please install dependencies manually:"
-        echo "pip3 install -r requirements_hotkey.txt"
+        echo "pip3 install -r requirements.txt"
     fi
 fi
 
