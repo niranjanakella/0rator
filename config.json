@@ -1,0 +1,39 @@
+{
+  "model": {
+    "name": "KOKORO",
+    "version": "0.19",
+    "file": "kokoro-v0_19.pth",
+    "type": "pytorch",
+    "architecture": "transformer",
+    "sample_rate": 24000,
+    "hop_length": 256,
+    "win_length": 1024,
+    "n_mel_channels": 100,
+    "n_fft": 1024
+  },
+  "voices": {
+    "default": "bf_isabella",
+    "available": [
+      {
+        "id": "bf_isabella",
+        "name": "Isabella",
+        "file": "voices/bf_isabella.pt",
+        "gender": "female",
+        "language": "en-US",
+        "description": "Clear, natural female voice"
+      }
+    ]
+  },
+  "audio": {
+    "sample_rate": 24000,
+    "channels": 1,
+    "bit_depth": 16,
+    "buffer_size": 1024
+  },
+  "app": {
+    "name": "0rator",
+    "version": "1.0.0",
+    "bundle_id": "com.orator.macos",
+    "min_macos_version": "10.15"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "model_path": "kokoro-v0_19.pth",
+  "voice_path": "voices/bf_isabella.pt",
+  "hotkey_timeout": 0.5,
+  "max_text_length": 500,
+  "device": "auto",
+  "log_level": "INFO"
+}
