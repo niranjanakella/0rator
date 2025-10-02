@@ -1195,10 +1195,11 @@ class TextProcessor:
         logger.info(f"Validating text: {len(text)} characters")
 
         # Check for valid characters (basic validation)
-        # Allow letters, numbers, punctuation, and whitespace
-        import re
-        if not re.search(r'[a-zA-Z0-9]', text):
-            logger.warning("Text contains no alphanumeric characters")
+        # Allow letters, numbers, punctuation, and whitespace from any language
+        # Check if text contains any alphanumeric characters (Unicode-aware)
+        has_alphanumeric = any(c.isalnum() for c in text)
+        if not has_alphanumeric:
+            logger.warning("Text contains no letters or numbers")
             return False
 
         return True
