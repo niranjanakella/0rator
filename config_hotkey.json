@@ -1,7 +1,7 @@
 {
   "model_path": "kokoro-v1_0.pth",
   "voices_dir": "voices",
-  "voice": "bf_isabella",
+  "voice": "hf_beta",
   "hotkey_timeout": 0.5,
   "max_text_length": null,
   "device": "auto",

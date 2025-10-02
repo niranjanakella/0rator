@@ -44,7 +44,7 @@ class AppConfig:
     """Application configuration"""
     model_path: str = "kokoro-v1_0.pth"  # Path to local model file
     voices_dir: str = "voices"           # Path to voices directory
-    voice: str = "bf_isabella"           # Default voice
+    voice: str = "bf_isabella"           # Voice to use (language determined by first character)
     hotkey_timeout: float = 0.5          # Double-tap window
     # No character limit (None = unlimited)
     max_text_length: int = None
@@ -81,6 +81,8 @@ class TTSEngine:
         self.use_gpu = False
         self._model_loaded = False
         self._generation_lock = threading.Lock()  # Prevent concurrent generation
+
+
 
     def initialize_model(self):
         """Load KModel instances and KPipeline instances"""
@@ -151,20 +153,31 @@ Please ensure:
             # Initialize pipelines like in kokoro-demo-app.py
             try:
                 logger.info("Initializing pipelines...")
-                # Create pipelines for supported languages (a=American, b=British)
-                self.pipelines = {
-                    lang_code: KPipeline(
-                        lang_code=lang_code,
+                
+                # Initialize pipeline only for the configured voice's language
+                self.pipelines = {}
+                voice_lang = self.voice[0]  # First character is language code
+                logger.info(f"Initializing pipeline for configured voice language: {voice_lang}")
+                
+                try:
+                    self.pipelines[voice_lang] = KPipeline(
+                        lang_code=voice_lang,
                         model=False,
                         repo_id='hexgrad/Kokoro-82M'
                     )
-                    for lang_code in 'ab'
-                }
-                # Add custom pronunciation for 'kokoro' like in demo app
-                self.pipelines['a'].g2p.lexicon.golds['kokoro'] = 'kˈOkəɹO'
-                self.pipelines['b'].g2p.lexicon.golds['kokoro'] = 'kˈQkəɹQ'
+                    logger.info(f"Pipeline initialized successfully for language: {voice_lang}")
+                except Exception as e:
+                    logger.error(f"Failed to initialize pipeline for language {voice_lang}: {e}")
+                    raise RuntimeError(f"Failed to initialize pipeline for configured voice language: {voice_lang}")
+                
+                # Add custom pronunciation for 'kokoro' if using English pipeline
+                if voice_lang in ['a', 'b']:
+                    if voice_lang == 'a':
+                        self.pipelines[voice_lang].g2p.lexicon.golds['kokoro'] = 'kˈOkəɹO'
+                    else:  # voice_lang == 'b'
+                        self.pipelines[voice_lang].g2p.lexicon.golds['kokoro'] = 'kˈQkəɹQ'
 
-                logger.info("Pipelines initialized successfully")
+                logger.info(f"Pipeline initialized successfully for language: {voice_lang}")
             except Exception as e:
                 error_msg = f"""
 Failed to initialize KPipeline: {e}
@@ -261,9 +274,13 @@ Check that the voices directory contains: {self.voice}.pt
             text = text.strip()
             logger.info(f"Generating audio for text: {len(text)} characters")
 
-            # Use the pipeline approach like in kokoro-demo-app.py generate_all function
-            # Get pipeline for voice language
-            pipeline = self.pipelines[self.voice[0]]
+            # Use the configured voice and its pipeline
+            voice_lang = self.voice[0]  # First character is language code
+            pipeline = self.pipelines[voice_lang]
+            voice_to_use = self.voice
+            
+            logger.info(f"Using pipeline: {voice_lang}, voice: {voice_to_use}")
+            
             # Use pre-loaded voice pack
             pack = self.voice_pack
 
@@ -275,7 +292,7 @@ Check that the voices directory contains: {self.voice}.pt
             total_duration = 0
 
             # Process text through pipeline (similar to generate_all function)
-            for segment_idx, (_, ps, _) in enumerate(pipeline(text, self.voice, speed=self.config.speed)):
+            for segment_idx, (_, ps, _) in enumerate(pipeline(text, voice_to_use, speed=self.config.speed)):
                 ref_s = pack[len(ps)-1]
 
                 try:
@@ -504,10 +521,16 @@ Check that the voices directory contains: {self.voice}.pt
                 logger.warning("No text chunks to process")
                 return
 
-            # Get pipeline for voice language
-            pipeline = self.pipelines[self.voice[0]]
+            # Use the configured voice and its pipeline
+            voice_lang = self.voice[0]  # First character is language code
+            pipeline = self.pipelines[voice_lang]
+            voice_to_use = self.voice
+            
+            logger.info(f"Using streaming pipeline: {voice_lang}, voice: {voice_to_use}")
+            
             # Use pre-loaded voice pack
             pack = self.voice_pack
+                
             use_gpu = self.use_gpu and self.use_gpu in self.models
 
             # Process each chunk and yield audio as soon as it's ready
@@ -520,7 +543,7 @@ Check that the voices directory contains: {self.voice}.pt
                     chunk_audio_segments = []
 
                     # Process text chunk through pipeline
-                    for segment_idx, (_, ps, _) in enumerate(pipeline(text_chunk, self.voice, speed=self.config.speed)):
+                    for segment_idx, (_, ps, _) in enumerate(pipeline(text_chunk, voice_to_use, speed=self.config.speed)):
                         ref_s = pack[len(ps)-1]
 
                         try:
