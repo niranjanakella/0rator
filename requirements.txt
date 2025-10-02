@@ -7,8 +7,13 @@ soundfile>=0.13.1
 kokoro>=0.9.4
 
 # Text Processing
-phonemizer>=3.3.0
-# misaki[en]>=0.1.0
+phonemizer-fork==3.3.2
+
+#pyopenjtalk==0.4.1
+#fugashi==1.5.1
+#jaconv==0.4.0
+#mojimoji==0.0.13
+#mecab-python3==1.0.10
 
 # Audio & System Integration
 pygame>=2.6.1
@@ -18,7 +23,7 @@ pyperclip>=1.11.0
 # Utilities
 loguru>=0.7.3
 huggingface-hub>=0.35.1
+pyobjc==11.1
 
-pyobjc-framework-Cocoa==11.1
-pyobjc-framework-quartz==11.1
-AppKit==0.2.8
+# Basic PIP
+pip==25.2

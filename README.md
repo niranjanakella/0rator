@@ -170,7 +170,7 @@ We recommend **UV** for this project because it's:
 
 4. **Download [model](https://huggingface.co/hexgrad/Kokoro-82M) and voices** (if not included):
    ```bash
-   pip install -U "huggingface_hub[cli]"
+   uv pip install -U "huggingface_hub[cli]"
 
    # Download model
    huggingface-cli download hexgrad/Kokoro-82M --include "kokoro-v1_0.pth" --local-dir .
@@ -178,6 +178,8 @@ We recommend **UV** for this project because it's:
    # Download voices
    huggingface-cli download hexgrad/Kokoro-82M --include "voices/*" --local-dir .
    ```
+5. **Language Pack**
+- By default "en-core-web-sm" is installed through requirements for English, navigate and install other small language packs from [spaCy](https://spacy.io/models/en).
 
 ## 🎯 Usage
 
