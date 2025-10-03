@@ -1,4 +1,4 @@
-#  0rator TTS Engine
+#  Orator TTS Engine
 
 <div align="center">
 <img src="0rator.png" height="128">
@@ -12,6 +12,10 @@
 ![macOS](https://img.shields.io/badge/macOS-Compatible-black?style=for-the-badge&logo=apple)
 
 *High-quality neural text-to-speech with 50+ voices across 9 languages*
+
+[![Orator Demo](https://img.youtube.com/vi/4V6Yej99URc/0.jpg)](https://www.youtube.com/watch?v=4V6Yej99URc)
+
+Click for Demo ☝️
 
 </div>
 
@@ -149,7 +153,7 @@ We recommend **UV** for this project because it's:
 2. **Clone and setup the project:**
    ```bash
    # Clone repo
-   cd 0rator
+   cd Orator
    
    # Create virtual environment and install dependencies
    uv venv --python=3.11
@@ -200,7 +204,8 @@ python3 macos_tts_hotkey.py
 
 **How to use:**
 - Select any text in any macOS application
-- Double-tap the Command key quickly
+- Double-tap the Option key (⌥) quickly to start TTS
+- Press **Escape** key to stop TTS playback at any time
 - Listen to the text being read aloud!
 
 ## ⚙️ Configuration
@@ -280,6 +285,11 @@ config.device = "cpu"
 - Ensure voice files are in the `voices/` directory
 - Check that the voice name matches exactly (case-sensitive)
 
+**"Stop functionality not working"**
+- Ensure the application has focus or accessibility permissions
+- Try pressing Escape key while TTS is actively playing
+- Check terminal logs for any error messages
+
 ### Performance Optimization
 
 - **GPU Usage**: Automatic CUDA detection, falls back to CPU
@@ -290,7 +300,7 @@ config.device = "cpu"
 ## 📁 Project Structure
 
 ```
-0rator/
+Orator/
 ├── kokoro/               # Core TTS library
 │   ├── __init__.py
 │   ├── model.py          # KModel implementation

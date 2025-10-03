@@ -1,10 +1,11 @@
 {
   "model_path": "kokoro-v1_0.pth",
   "voices_dir": "voices",
-  "voice": "hf_beta",
+  "voice": "bf_isabella",
   "hotkey_timeout": 0.5,
   "max_text_length": null,
   "device": "auto",
   "log_level": "INFO",
-  "speed": 1.0
+  "speed": 1.0,
+  "_comment": "Press Escape key to stop TTS playback at any time"
 }

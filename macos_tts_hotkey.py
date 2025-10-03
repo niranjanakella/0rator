@@ -760,6 +760,10 @@ class AudioPlayer:
             if self.mixer_initialized:
                 pygame.mixer.stop()
                 self.current_sound = None
+                logger.info("Audio playback stopped")
+
+        except Exception as e:
+            logger.error(f"Error stopping audio: {e}")
 
             # Wait for streaming thread to finish, but avoid joining current thread
             if (self._streaming_thread and
@@ -1340,7 +1344,7 @@ class HotkeyMonitor:
                 # Start listener in a separate thread
                 self.listener.start()
                 logger.info(
-                    "Hotkey monitoring started - listening for double Option key press")
+                    "Hotkey monitoring started - listening for double Option key press (Escape to stop)")
                 return True
 
             except Exception as e:
@@ -1382,9 +1386,25 @@ You may also need to add Python to the accessibility list.
         """Register callback for hotkey events"""
         self.hotkey_callback = callback
 
+    def on_stop_requested(self, callback: Callable):
+        """Register callback for stop events (Escape key)"""
+        self.stop_callback = callback
+
     def _on_key_press(self, key):
         """Handle key press events"""
         try:
+            # Check for Escape key to stop TTS
+            if key == keyboard.Key.esc:
+                logger.info("Escape key detected - stopping TTS")
+                if hasattr(self, 'stop_callback') and self.stop_callback and self.running:
+                    # Run stop callback in a separate thread
+                    threading.Thread(
+                        target=self.stop_callback,
+                        daemon=True,
+                        name="StopCallback"
+                    ).start()
+                return
+
             # Check if it's an Option key (Alt key on macOS)
             if key == keyboard.Key.alt or key == keyboard.Key.alt_r:
                 current_time = time.time()
@@ -1472,6 +1492,7 @@ class MacOSTTSApp:
         # Initialize Hotkey Monitor
         hotkey_monitor = HotkeyMonitor(self.config)
         hotkey_monitor.on_hotkey_detected(self.handle_hotkey)
+        hotkey_monitor.on_stop_requested(self.handle_stop_request)
 
         if not hotkey_monitor.start_monitoring():
             logger.error("Failed to start hotkey monitoring")
@@ -1589,6 +1610,24 @@ class MacOSTTSApp:
         # Start processing in background thread
         threading.Thread(target=process_hotkey, daemon=True,
                          name="HotkeyProcessor").start()
+
+    def handle_stop_request(self):
+        """Handle stop request (Escape key pressed)"""
+        logger.info("Stop request detected - stopping TTS playback")
+        
+        try:
+            # Get audio player component
+            audio_player = self.components.get('audio_player')
+            
+            if audio_player:
+                # Stop any currently playing audio
+                audio_player.stop_current()
+                logger.info("TTS playback stopped successfully")
+            else:
+                logger.warning("Audio player not available for stop request")
+                
+        except Exception as e:
+            logger.error(f"Error handling stop request: {e}")
 
 
 def signal_handler(signum, frame):
