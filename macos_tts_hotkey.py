@@ -645,6 +645,8 @@ class AudioPlayer:
         self._audio_queue = None  # Queue for streaming audio chunks
         self._streaming_active = False  # Flag for streaming playback
         self._streaming_thread = None  # Thread for streaming playback
+        self._paused = False  # Pause state
+        self._overlay_channel_index = 7  # Reserved channel for overlay beeps
 
     def initialize(self):
         """Initialize pygame mixer"""
@@ -652,6 +654,11 @@ class AudioPlayer:
             pygame.mixer.pre_init(frequency=24000, size=-
                                   16, channels=1, buffer=1024)
             pygame.mixer.init()
+            # Reserve a small pool of channels and one for overlay beeps
+            try:
+                pygame.mixer.set_num_channels(8)
+            except Exception:
+                pass
             self.mixer_initialized = True
             logger.info("Audio player initialized")
             return True
@@ -704,6 +711,47 @@ class AudioPlayer:
         except Exception as e:
             logger.error(f"Failed to play audio: {e}")
             return False
+
+    def pause(self) -> bool:
+        """Pause playback (streaming or single)."""
+        try:
+            if not self.mixer_initialized:
+                return False
+            if not pygame.mixer.get_busy():
+                return False
+            pygame.mixer.pause()
+            self._paused = True
+            logger.info("Audio paused")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to pause audio: {e}")
+            return False
+
+    def resume(self) -> bool:
+        """Resume playback (streaming or single)."""
+        try:
+            if not self.mixer_initialized:
+                return False
+            # If nothing was paused/playing, do nothing
+            if not self._paused and not pygame.mixer.get_busy():
+                return False
+            pygame.mixer.unpause()
+            self._paused = False
+            logger.info("Audio resumed")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to resume audio: {e}")
+            return False
+
+    def toggle_pause(self) -> bool:
+        """Toggle between pause and resume states."""
+        return self.resume() if self._paused else self.pause()
+
+    def is_active(self) -> bool:
+        """Return True if audio is currently playing or paused."""
+        if not self.mixer_initialized:
+            return False
+        return self._paused or pygame.mixer.get_busy()
 
     def _play_audio_chunk_internal(self, audio_data: AudioData):
         """Internal audio playback method for streaming chunks (doesn't stop current stream)"""
@@ -880,6 +928,10 @@ class AudioPlayer:
                     # Wait for this chunk to finish playing before getting the next
                     if self.current_sound:
                         while pygame.mixer.get_busy() and self._streaming_active:
+                            # If paused, wait here until unpaused or streaming stopped
+                            if self._paused:
+                                time.sleep(0.01)
+                                continue
                             # Small sleep to avoid busy waiting
                             time.sleep(0.01)
 
@@ -902,6 +954,54 @@ class AudioPlayer:
         except Exception as e:
             logger.error(f"Audio consumer worker error: {e}")
             self._streaming_active = False
+
+    def is_paused(self) -> bool:
+        """Return True if playback is currently paused."""
+        return bool(self._paused)
+
+    def is_active(self) -> bool:
+        """Return True if audio is currently playing or paused."""
+        if not self.mixer_initialized:
+            return False
+        try:
+            return self._paused or pygame.mixer.get_busy()
+        except Exception:
+            return self._paused
+
+    def pause(self) -> bool:
+        """Pause playback (streaming or single)."""
+        try:
+            if not self.mixer_initialized:
+                return False
+            if not pygame.mixer.get_busy():
+                return False
+            pygame.mixer.pause()
+            self._paused = True
+            logger.info("Audio paused")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to pause audio: {e}")
+            return False
+
+    def resume(self) -> bool:
+        """Resume playback (streaming or single)."""
+        try:
+            if not self.mixer_initialized:
+                return False
+            # If nothing was paused/playing, do nothing
+            if not self._paused and not pygame.mixer.get_busy():
+                return False
+            pygame.mixer.unpause()
+            self._paused = False
+            logger.info("Audio resumed")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to resume audio: {e}")
+            return False
+
+    def toggle_pause(self) -> bool:
+        """Toggle between pause and resume states."""
+        return self.resume() if self._paused else self.pause()
 
     def play_notification(self, sound_type: str = "success"):
         """Play system notification sounds with caching"""
@@ -967,6 +1067,89 @@ class AudioPlayer:
 
         except Exception as e:
             logger.error(f"Failed to play notification: {e}")
+            return False
+
+    def play_notification_overlay(self, sound_type: str = "success", volume: float = 0.35):
+        """Play a short notification tone without interrupting current playback.
+
+        This uses a reserved mixer channel so it overlays on top of TTS audio.
+        """
+        try:
+            if not self.mixer_initialized:
+                return False
+
+            # Get or generate notification AudioData (reuse cache when available)
+            if sound_type in self._audio_cache:
+                notification_audio = self._audio_cache[sound_type]
+            else:
+                # Generate simple notification tones (duplicated minimal logic to avoid interrupting main playback)
+                sample_rate = 24000
+                duration = 0.2
+                if sound_type == "success":
+                    frequency = 800
+                elif sound_type == "error":
+                    frequency = 400
+                elif sound_type == "no_text":
+                    frequency = 600
+                else:
+                    frequency = 600
+
+                t = np.linspace(0, duration, int(sample_rate * duration))
+                if sound_type == "no_text":
+                    beep1 = np.sin(2 * np.pi * frequency * t[:len(t)//3])
+                    silence = np.zeros(len(t)//6)
+                    beep2 = np.sin(2 * np.pi * frequency * t[:len(t)//3])
+                    padding = np.zeros(len(t) - len(beep1) - len(silence) - len(beep2))
+                    audio_samples = np.concatenate([beep1, silence, beep2, padding])
+                else:
+                    audio_samples = np.sin(2 * np.pi * frequency * t)
+
+                fade_samples = int(0.01 * sample_rate)
+                audio_samples[:fade_samples] *= np.linspace(0, 1, fade_samples)
+                audio_samples[-fade_samples:] *= np.linspace(1, 0, fade_samples)
+                audio_samples = (audio_samples * 0.3 * 32767).astype(np.int16)
+
+                notification_audio = AudioData(
+                    samples=audio_samples,
+                    sample_rate=sample_rate,
+                    duration=duration
+                )
+                self._audio_cache[sound_type] = notification_audio
+
+            # Convert to pygame Sound without stopping current audio
+            audio_samples = notification_audio.samples
+            if audio_samples.dtype != np.int16:
+                max_val = np.max(np.abs(audio_samples))
+                if max_val > 1.0:
+                    audio_samples = audio_samples / max_val
+                audio_samples = (audio_samples * 32767).astype(np.int16)
+
+            buffer = io.BytesIO()
+            sf.write(buffer, audio_samples, notification_audio.sample_rate, format='WAV')
+            buffer.seek(0)
+
+            sound = pygame.mixer.Sound(buffer)
+            try:
+                channel = pygame.mixer.Channel(self._overlay_channel_index)
+            except Exception:
+                channel = None
+
+            if channel is not None:
+                try:
+                    sound.set_volume(max(0.0, min(1.0, volume)))
+                except Exception:
+                    pass
+                channel.play(sound)
+                return True
+
+            # Fallback: play normally (may mix if multiple channels available)
+            try:
+                sound.play()
+                return True
+            except Exception:
+                return False
+        except Exception as e:
+            logger.error(f"Failed to play overlay notification: {e}")
             return False
 
     def cleanup(self):
@@ -1326,6 +1509,8 @@ class HotkeyMonitor:
         self.last_cmd_press = 0
         self.cmd_pressed = False
         self.hotkey_callback = None
+        self.pause_callback = None
+        self.alt_down = False
         self.running = False
 
     def start_monitoring(self):
@@ -1390,9 +1575,14 @@ You may also need to add Python to the accessibility list.
         """Register callback for stop events (Escape key)"""
         self.stop_callback = callback
 
+    def on_pause_requested(self, callback: Callable):
+        """Register callback for pause/resume toggle events"""
+        self.pause_callback = callback
+
     def _on_key_press(self, key):
         """Handle key press events"""
         try:
+            from pynput.keyboard import Key, KeyCode
             # Check for Escape key to stop TTS
             if key == keyboard.Key.esc:
                 logger.info("Escape key detected - stopping TTS")
@@ -1405,6 +1595,10 @@ You may also need to add Python to the accessibility list.
                     ).start()
                 return
 
+            # Track Alt/Option key state
+            if key == Key.alt or key == Key.alt_r:
+                self.alt_down = True
+
             # Check if it's an Option key (Alt key on macOS)
             if key == keyboard.Key.alt or key == keyboard.Key.alt_r:
                 current_time = time.time()
@@ -1412,8 +1606,15 @@ You may also need to add Python to the accessibility list.
                 # If Option was already pressed recently, check for double-tap
                 if self.cmd_pressed and (current_time - self.last_cmd_press) <= self.config.hotkey_timeout:
                     logger.info("Double Option key detected!")
-                    if self.hotkey_callback and self.running:
-                        # Run callback in a separate thread to avoid blocking the listener
+                    # If pause callback is set, prefer toggling pause/resume
+                    if hasattr(self, 'pause_callback') and self.pause_callback and self.running:
+                        threading.Thread(
+                            target=self.pause_callback,
+                            daemon=True,
+                            name="PauseCallback"
+                        ).start()
+                    elif self.hotkey_callback and self.running:
+                        # Fallback: start TTS (legacy behavior)
                         threading.Thread(
                             target=self.hotkey_callback,
                             daemon=True,
@@ -1452,6 +1653,9 @@ You may also need to add Python to the accessibility list.
                     if (current_time - self.last_cmd_press) > self.config.hotkey_timeout:
                         self.cmd_pressed = False
                         self.last_cmd_press = 0
+            else:
+                # Alt released
+                self.alt_down = False
 
         except Exception as e:
             logger.error(f"Error in key release handler: {e}")
@@ -1493,6 +1697,7 @@ class MacOSTTSApp:
         hotkey_monitor = HotkeyMonitor(self.config)
         hotkey_monitor.on_hotkey_detected(self.handle_hotkey)
         hotkey_monitor.on_stop_requested(self.handle_stop_request)
+        hotkey_monitor.on_pause_requested(self.handle_pause_request)
 
         if not hotkey_monitor.start_monitoring():
             logger.error("Failed to start hotkey monitoring")
@@ -1628,6 +1833,45 @@ class MacOSTTSApp:
                 
         except Exception as e:
             logger.error(f"Error handling stop request: {e}")
+
+    def handle_pause_request(self):
+        """Toggle pause/resume of current playback"""
+        logger.info("Pause/Resume requested - toggling playback state or starting TTS")
+        try:
+            audio_player = self.components.get('audio_player')
+            tts_engine = self.components.get('tts_engine')
+            text_processor = self.components.get('text_processor')
+            if audio_player:
+                # If nothing is active, treat as start request (when user double-taps Option with text selected)
+                if not audio_player.is_active():
+                    # Play a quick confirmation beep without interrupting future playback
+                    audio_player.play_notification_overlay("success")
+                    if text_processor and tts_engine:
+                        selected_text = text_processor.get_selected_text()
+                        prepared_text = text_processor.prepare_text(selected_text or "") if selected_text else None
+                        if prepared_text:
+                            logger.info("No active playback; starting streaming TTS from pause handler")
+                            self.process_streaming_tts(prepared_text)
+                        else:
+                            # If no text available, signal no_text
+                            audio_player.play_notification_overlay("no_text")
+                    return
+
+                # Otherwise toggle pause and beep according to resulting state
+                was_paused = audio_player.is_paused()
+                toggled = audio_player.toggle_pause()
+                now_paused = audio_player.is_paused()
+                if toggled:
+                    if now_paused and not was_paused:
+                        # Paused: low beep
+                        audio_player.play_notification_overlay("error")
+                    elif not now_paused and was_paused:
+                        # Resumed: high beep
+                        audio_player.play_notification_overlay("success")
+            else:
+                logger.warning("Audio player not available for pause request")
+        except Exception as e:
+            logger.error(f"Error handling pause request: {e}")
 
 
 def signal_handler(signum, frame):
