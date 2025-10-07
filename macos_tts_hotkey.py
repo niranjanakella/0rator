@@ -796,6 +796,9 @@ class AudioPlayer:
         try:
             # Stop streaming playback
             self._streaming_active = False
+            
+            # Reset pause state
+            self._paused = False
 
             # Clear the audio queue if it exists
             if self._audio_queue:
